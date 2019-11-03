@@ -1,51 +1,90 @@
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include <WiFiClient.h>
 
 #include <Servo.h>
 
+#include "index.h"
+
 #ifndef STASSID
 #define STASSID "AlticeForumBraga"
-#define STAPSK  ""
+#define STAPSK ""
 #endif
 
-const char* ssid = STASSID;
-const char* password = STAPSK;
+const char *ssid = STASSID;
+const char *password = STAPSK;
 
 ESP8266WebServer server(80);
-
 Servo servo;
+int IN1 = D5;
+int IN2 = D6;
+int IN3 = D7;
+int IN4 = D8;
 
-void handleRoda() {
-    servo.write(0);
-    delay(3000);
-    servo.write(90);
-    delay(3000);
-    servo.write(180);
-    delay(3000);
+void handleRotate() {
+  String page = MAIN_PAGE;
+  for (uint8_t i = 0; i < server.args(); i++) {
+    servo.write(server.arg(i).toInt());
+  }
+  server.send(200, "text/html", page);
+}
+
+void handleTurn() {
+  String page = MAIN_PAGE;
+  for (uint8_t i = 0; i < server.args(); i++) {
+    if (server.arg(i) == "left") {
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN3, HIGH);
+      delay(2000);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN3, LOW);
+    } else {
+      digitalWrite(IN2, HIGH);
+      digitalWrite(IN4, HIGH);
+      delay(2000);
+      digitalWrite(IN2, LOW);
+      digitalWrite(IN4, LOW);
+    }
+  }
+  server.send(200, "text/html", page);
+}
+
+void handleWalk() {
+  String page = MAIN_PAGE;
+  for (uint8_t i = 0; i < server.args(); i++) {
+    if (server.arg(i) == "foward") {
+      digitalWrite(IN2, HIGH);
+      digitalWrite(IN3, HIGH);
+      delay(2000);
+      digitalWrite(IN2, LOW);
+      digitalWrite(IN3, LOW);
+    } else {
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN4, HIGH);
+      delay(2000);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN4, LOW);
+    }
+  }
+  server.send(200, "text/html", page);
 }
 
 void handleTurnOFF() {
-  digitalWrite(2, HIGH);
-  server.send(200, "text/html", "Luz: OFF \
-  <form action='turnON' method='get'> \
-         <button type='submit'>ON</button> \
-  </form> \
-  ");
+  String page = MAIN_PAGE;
+  digitalWrite(LED_BUILTIN, HIGH);
+  server.send(200, "text/html", page);
 }
 
 void handleTurnON() {
-  digitalWrite(2, LOW);
-  server.send(200, "text/html", "Luz: ON \
-  <form action='turnOFF' method='get'> \
-         <button type='submit'>OFF</button> \
-  </form> \
-  ");
+  String page = MAIN_PAGE;
+  digitalWrite(LED_BUILTIN, LOW);
+  server.send(200, "text/html", page);
 }
 
 void handleRoot() {
-  server.send(200, "text/html", "Olá");
+  String page = MAIN_PAGE;
+  server.send(200, "text/html", page);
 }
 
 void handleNotFound() {
@@ -64,7 +103,12 @@ void handleNotFound() {
 }
 
 void setup(void) {
-  pinMode(2, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
 
   servo.attach(D1);
   servo.write(0);
@@ -85,14 +129,23 @@ void setup(void) {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  servo.write(0);
+  digitalWrite(LED_BUILTIN, LOW);
+
   if (MDNS.begin("esp8266")) {
     Serial.println("MDNS responder started");
   }
 
   server.on("/", handleRoot);
-  server.on("/turnOFF", handleTurnOFF);
-  server.on("/turnON", handleTurnON);
-  server.on("/roda", handleRoda);
+  server.on("/off", handleTurnOFF);
+  server.on("/on", handleTurnON);
+  server.on("/rotate", handleRotate);
+  server.on("/turn", handleTurn);
+  server.on("/walk", handleWalk);
 
   server.onNotFound(handleNotFound);
 
