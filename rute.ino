@@ -16,6 +16,10 @@ const char* password = STAPSK;
 ESP8266WebServer server(80);
 
 Servo servo;
+int IN1 = D5;
+int IN2 = D6;
+int IN3 = D7;
+int IN4 = D8;
 
 void handleRoda() {
     servo.write(0);
@@ -63,8 +67,24 @@ void handleNotFound() {
   server.send(404, "text/plain", message);
 }
 
+void handleAnda() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  delay(2000);
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN3, LOW);
+}
+
 void setup(void) {
   pinMode(2, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
 
   servo.attach(D1);
   servo.write(0);
@@ -93,6 +113,7 @@ void setup(void) {
   server.on("/turnOFF", handleTurnOFF);
   server.on("/turnON", handleTurnON);
   server.on("/roda", handleRoda);
+  server.on("/anda", handleAnda);
 
   server.onNotFound(handleNotFound);
 
