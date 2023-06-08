@@ -5,7 +5,7 @@
 
 #include <Servo.h>
 
-#include "index.h"
+#include "index.hpp"
 
 #ifndef STASSID
 #define STASSID "AlticeForumBraga"
